@@ -1,0 +1,12 @@
+services:
+  rss-mastodon-bot:
+    build: .
+    container_name: rss-mastodon-bot
+    environment:
+      MASTODON_TOKEN: "ton_token_ici"
+      MASTODON_URL: "https://mastodon.social"
+      RSSHUB_URL: "http://host.docker.internal:1200/twitter/user/<TWITTER_USERNAME>"
+      CHECK_INTERVAL: "1800"
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

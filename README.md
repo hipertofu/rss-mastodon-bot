@@ -5,7 +5,6 @@ Un bot automatisé qui récupère les tweets d'un compte Twitter via RSSHub et l
 ![Status](https://img.shields.io/badge/status-active-brightgreen)
 ![Python](https://img.shields.io/badge/python-3.11+-blue)
 ![Docker](https://img.shields.io/badge/docker-enabled-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
@@ -16,11 +15,9 @@ Un bot automatisé qui récupère les tweets d'un compte Twitter via RSSHub et l
 - ✅ **Poste sur Mastodon** avec les médias en natif
 - ✅ **Nettoyage HTML** automatique des descriptions
 - ✅ **Cache des tweets** pour éviter les doublons
-- ✅ **Message d'auto-destruction** au démarrage (avec humour 😄)
+- ✅ **Message d'auto-destruction** au démarrage (avec humour 😄 ou pas)
 - ✅ **Vérification périodique** (30 minutes par défaut)
 - ✅ **Déploiement Docker** simple et rapide
-- ✅ **Gestion des entités HTML** (`&amp;` → `&`)
-- ✅ **Support des vidéos** (MP4, WebM)
 
 ---
 
@@ -28,9 +25,8 @@ Un bot automatisé qui récupère les tweets d'un compte Twitter via RSSHub et l
 
 ### Prérequis
 
-- Docker & Docker Compose
 - Compte Mastodon + Token API
-- Instance RSSHub locale ou publique
+- Instance RSSHub locale (ou publique)
 
 ### 1️⃣ Clone ou crée le dossier
 
@@ -59,7 +55,7 @@ services:
     environment:
       MASTODON_TOKEN: "ton_token_ici"
       MASTODON_URL: "https://mastodon.social"
-      RSSHUB_URL: "http://host.docker.internal:1200/twitter/user/L_ThinkTank"
+      RSSHUB_URL: "http://host.docker.internal:1200/twitter/user/<TWITTER_USERNAME>"
       CHECK_INTERVAL: "1800"
     restart: unless-stopped
     extra_hosts:
@@ -88,7 +84,7 @@ docker-compose logs -f
 |----------|-------------|--------|
 | `MASTODON_TOKEN` | Token API Mastodon | `""` |
 | `MASTODON_URL` | URL instance Mastodon | `https://mastodon.social` |
-| `RSSHUB_URL` | URL flux RSSHub | `http://host.docker.internal:1200/twitter/user/L_ThinkTank` |
+| `RSSHUB_URL` | URL flux RSSHub | `http://host.docker.internal:1200/twitter/user/<TWITTER_USERNAME>` |
 | `CHECK_INTERVAL` | Intervalle de vérification (secondes) | `1800` (30 min) |
 
 ### Obtenir le token Mastodon
@@ -106,7 +102,7 @@ docker run -d -p 1200:1200 diylc/rsshub
 
 **Option 2 : Public**
 ```
-https://rsshub.app/twitter/user/USERNAME
+https://rsshub.app/twitter/user/<TWITTER_USERNAME>
 ```
 
 ---
@@ -225,7 +221,7 @@ startup_msg = f"""🤖 Ton message personnalisé ici
 
 Dans `docker-compose.yml` :
 ```yaml
-RSSHUB_URL: "http://host.docker.internal:1200/twitter/user/AUTRE_COMPTE"
+RSSHUB_URL: "http://host.docker.internal:1200/twitter/user/<TWITTER_USERNAME>"
 ```
 
 ---
@@ -270,16 +266,6 @@ rss-mastodon-bot/
 
 ## 🐛 Problèmes connus
 
-### Les images ne s'affichent pas
-
-**Cause** : Entités HTML mal décodées (`&amp;` au lieu de `&`)
-**Solution** : Le bot décode automatiquement les entités
-
-### Les vidéos ne téléchargent pas
-
-**Cause** : Format non supporté ou URL invalide
-**Solution** : Vérifiez le format (MP4, WebM)
-
 ### Erreur "Connection refused"
 
 **Cause** : RSSHub local non accessible
@@ -296,42 +282,6 @@ rss-mastodon-bot/
 
 ---
 
-## 🤝 Contribution
-
-Les contributions sont bienvenues ! 
-
-Pour contribuer :
-1. Fork le repo
-2. Crée une branche (`git checkout -b feature/AméliorationX`)
-3. Commit tes changements (`git commit -m 'Add feature X'`)
-4. Push (`git push origin feature/AméliorationX`)
-5. Ouvre une Pull Request
-
----
-
-## 📜 License
-
-MIT License - Libre d'utilisation commerciale et personnelle
-
----
-
-## 🙏 Remerciements
-
-- **RSSHub** : Pour l'agrégation de flux Twitter
-- **Mastodon** : Pour l'API ouverte
-- **Docker** : Pour la conteneurisation
-
----
-
-## 📞 Support
-
-Pour les questions ou problèmes :
-- Ouvrez une **Issue** sur GitHub
-- Vérifiez les logs : `docker-compose logs -f`
-- Consultez la section **Dépannage**
-
----
-
 ## 📚 Ressources utiles
 
 - [RSSHub Documentation](https://docs.rsshub.app)
@@ -341,5 +291,5 @@ Pour les questions ou problèmes :
 
 ---
 
-**Fait avec ❤️ pour les amateurs de Mastodon & bots**
+**Fait avec ❤️**
 

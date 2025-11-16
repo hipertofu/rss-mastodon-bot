@@ -1,295 +1,289 @@
 # 🤖 RSSHub to Mastodon Bot
 
-Un bot automatisé qui récupère les tweets d'un compte Twitter via RSSHub et les poste sur Mastodon avec les médias en natif.
+Un bot automatisé qui surveille un flux RSS (alimenté par RSSHub) d'un compte X et republique automatiquement les posts sur Mastodon avec support des vidéos et images, découpée en threads intelligents.
 
-![Status](https://img.shields.io/badge/status-active-brightgreen)
-![Python](https://img.shields.io/badge/python-3.11+-blue)
-![Docker](https://img.shields.io/badge/docker-enabled-blue)
+## 🎯 Fonctionnalités
 
----
+✅ **Surveillance RSS automatique** - Vérifie régulièrement le flux RSS via RSSHub  
+✅ **Publication Mastodon** - Publie les posts automatiquement sur votre instance Mastodon   
+✅ **Suppression des citations** - Ignore les tweets cités
+✅ **Threads intelligents** - Découpe automatiquement les longs posts en threads  
+✅ **Interface web** - Panneau de contrôle Material Design 3 avec configuration en temps réel  
+✅ **Message de démarrage** - Teste votre token avec un message auto-supprimable  
+✅ **Variables personnalisables** - Personnalisez les messages de démarrage et de continuation  
+✅ **Cache intelligent** - Évite de republier les mêmes posts  
+✅ **Gestion des erreurs robuste** - Logs détaillés et gestion des rate limits  
 
-## ✨ Fonctionnalités
+## 📋 Prérequis
 
-- ✅ **Récupère les tweets** via flux RSSHub local ou public
-- ✅ **Extrait les médias** (images, vidéos) de la description HTML
-- ✅ **Poste sur Mastodon** avec les médias en natif
-- ✅ **Nettoyage HTML** automatique des descriptions
-- ✅ **Cache des tweets** pour éviter les doublons
-- ✅ **Message d'auto-destruction** au démarrage (avec humour 😄 ou pas)
-- ✅ **Vérification périodique** (30 minutes par défaut)
-- ✅ **Déploiement Docker** simple et rapide
+- Docker
+- Token API Mastodon (avec permission `write:statuses`)
+- URL d'un flux RSSHub fonctionnel
+- Accès à RSSHub (interne ou externe)
 
----
+## 🚀 Installation
 
-## 🚀 Installation rapide
+### 1. Cloner le repository
 
-### Prérequis
-
-- Compte Mastodon + Token API
-- Instance RSSHub locale (ou publique)
-
-### 1️⃣ Clone ou crée le dossier
-
-```bash
-mkdir rss-mastodon-bot
+```
+git clone <votre-url-repo>
 cd rss-mastodon-bot
 ```
 
-### 2️⃣ Crée les fichiers
+### 2. Créer les fichiers de configuration
 
-**Dockerfile** :
-```dockerfile
+```
+# Créer le Dockerfile
+cat > Dockerfile << 'EOF'
 FROM python:3.11-slim
 WORKDIR /app
-RUN pip install feedparser requests
-COPY bot.py .
-CMD ["python", "-u", "bot.py"]
-```
 
-**docker-compose.yml** :
-```yaml
+RUN pip install feedparser requests Flask
+
+COPY bot.py app.py requirements.txt ./
+COPY templates/ ./templates/
+
+EXPOSE 5000
+
+CMD sh -c "python -u bot.py & python -u app.py"
+EOF
+
+# Créer requirements.txt
+cat > requirements.txt << 'EOF'
+feedparser==6.0.10
+requests==2.31.0
+Flask==2.3.0
+EOF
+
+# Créer docker-compose.yml
+cat > docker-compose.yml << 'EOF'
 services:
   rss-mastodon-bot:
     build: .
     container_name: rss-mastodon-bot
+    ports:
+      - "5000:5000"
     environment:
-      MASTODON_TOKEN: "ton_token_ici"
-      MASTODON_URL: "https://mastodon.social"
-      RSSHUB_URL: "http://host.docker.internal:1200/twitter/user/<TWITTER_USERNAME>"
+      MASTODON_TOKEN: ${MASTODON_TOKEN:-}
+      MASTODON_URL: ${MASTODON_URL:-https://mastodon.social}
+      RSSHUB_URL: ${RSSHUB_URL:-http://host.docker.internal:1200/twitter/user/username}
       CHECK_INTERVAL: "1800"
     restart: unless-stopped
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    volumes:
+      - ./config.json:/app/config.json
+      - ./posted_urls.json:/app/posted_urls.json
+EOF
 ```
 
-### 3️⃣ Récupère le bot.py
+### 3. Configuration initiale
 
-Télécharge le fichier `bot.py` de ce repo.
+```
+# Créer le dossier templates
+mkdir -p templates
 
-### 4️⃣ Démarre le bot
+# Copier les fichiers bot.py, app.py et templates/index.html
+# (voir les fichiers fournis)
+```
 
-```bash
+### 4. Lancer le bot
+
+```
+# Build et démarrage
 docker-compose build
 docker-compose up -d
+
+# Vérifier les logs
 docker-compose logs -f
 ```
 
----
+### 5. Accéder à l'interface web
+
+Ouvrez votre navigateur et allez à : **http://localhost:5000**
 
 ## ⚙️ Configuration
 
-### Variables d'environnement
+### Via l'interface web (recommandé)
 
-| Variable | Description | Défaut |
-|----------|-------------|--------|
-| `MASTODON_TOKEN` | Token API Mastodon | `""` |
-| `MASTODON_URL` | URL instance Mastodon | `https://mastodon.social` |
-| `RSSHUB_URL` | URL flux RSSHub | `http://host.docker.internal:1200/twitter/user/<TWITTER_USERNAME>` |
-| `CHECK_INTERVAL` | Intervalle de vérification (secondes) | `1800` (30 min) |
+1. Accédez à `http://localhost:5000`
+2. Remplissez les paramètres :
+   - **URL Mastodon** : Votre instance Mastodon (ex: `https://mastodon.social`)
+   - **Token API** : Votre token Mastodon
+   - **URL RSSHub** : Votre flux RSS (ex: `http://localhost:1200/twitter/user/username`)
+   - **Compte Twitter** : Le compte à surveiller
+   - **Autres paramètres** : Intervalle, délais, messages personnalisés
+3. Cliquez sur **Sauvegarder**
 
-### Obtenir le token Mastodon
-
-1. Accède à Préférences → Paramètres → Applications → Nouvelle application
-2. Nomme l'app et autorise : `read:statuses` `write:statuses` `write:media`
-3. Copie le token d'accès
-
-### Configuration de RSSHub
-
-**Option 1 : Local (Docker)**
-```bash
-docker run -d -p 1200:1200 diylc/rsshub
-```
-
-**Option 2 : Public**
-```
-https://rsshub.app/twitter/user/<TWITTER_USERNAME>
-```
-
----
-
-## 📊 Architecture
+### Via fichier config.json
 
 ```
-┌─────────────────────────┐
-│  Bot Container          │
-├─────────────────────────┤
-│ bot.py                  │
-│ - Récupère flux RSSHub  │
-│ - Extrait images/vidéos │
-│ - Poste sur Mastodon    │
-│ - Cache les tweets      │
-└─────────────────────────┘
-         ↓
-┌─────────────────────────┐
-│  RSSHub (Local/Public)  │
-│  Flux Twitter           │
-└─────────────────────────┘
-         ↓
-┌─────────────────────────┐
-│  Mastodon Instance      │
-│  Posts avec médias      │
-└─────────────────────────┘
+{
+  "MASTODON_URL": "https://mastodon.social",
+  "MASTODON_TOKEN": "votre_token_ici",
+  "RSSHUB_URL": "http://host.docker.internal:1200/twitter/user/username",
+  "TWITTER_ACCOUNT": "username",
+  "CHECK_INTERVAL": "1800",
+  "AUTO_DELETE_DELAY": "30",
+  "AUTODESTRUCT_VIDEO_URL": "https://media.giphy.com/media/7G9jJdKhlCrED7vEvT/giphy.mp4",
+  "MAX_CHAR_PER_POST": "490",
+  "STARTUP_MESSAGE_TEMPLATE": "🤖 Bot démarrage: {HEURE}\n📡 Surveillance: @{TWITTER_ACCOUNT}\n⏰ Auto-suppression dans {DELAY}s",
+  "CONTINUATION_MESSAGE": "[La suite dans les commentaires 👇]"
+}
 ```
 
----
+## 🎯 Obtenir votre token Mastodon
 
-## 📝 Utilisation
+1. Allez sur votre instance Mastodon (ex: mastodon.social)
+2. Paramètres → Applications → Nouvelle application
+3. Remplissez le formulaire :
+   - **Nom** : RSSHub Bot
+   - **Redirection URI** : `urn:ietf:wg:oauth:2.0:oob`
+   - **Permissions** : Cochez `write:statuses` (minimum)
+4. Cliquez sur **Soumettre**
+5. Copiez le **Token d'accès**
 
-### Démarrage
+## 🔗 Configuration RSSHub
 
-```bash
-docker-compose up -d
+### Exemple avec Twitter
+
+```
+http://localhost:1200/twitter/user/L_ThinkTank
 ```
 
-### Logs en direct
+### Documentation RSSHub
 
-```bash
+Pour d'autres sources RSS : [https://docs.rsshub.app/](https://docs.rsshub.app/)
+
+## 📱 Interface Web
+
+L'interface web (Material Design 3) vous permet de :
+
+- ✏️ Modifier la configuration en temps réel
+- 🎬 Tester les posts avant publication
+- 🎨 Personnaliser les messages de démarrage
+- 📊 Monitorer les paramètres du bot
+
+### Variables de personnalisation
+
+**Message de démarrage :**
+- `{HEURE}` - Heure actuelle (HH:MM:SS)
+- `{DATE}` - Date actuelle (DD/MM/YYYY)
+- `{TWITTER_ACCOUNT}` - Nom du compte surveillé
+- `{DELAY}` - Délai avant suppression automatique
+
+## 🧪 Test
+
+Utilisez le bouton **Test Post** dans l'interface web pour vérifier :
+- La connexion RSSHub
+- La connexion Mastodon
+- Le upload de médias
+- La publication sur Mastodon
+
+## 📊 Logs
+
+Les logs sont disponibles via Docker :
+
+```
+# Logs en temps réel
 docker-compose logs -f
+
+# Logs du bot uniquement
+docker-compose logs -f rss-mastodon-bot | grep "$$BOT$$"
 ```
 
-### Arrêt
+## 🤝 Exemple en production
 
-```bash
-docker-compose down
+Ce script alimente actuellement le compte Mastodon :
+
+**🦣 [@ThinkTankNotOfficial@mastodon.social](https://mastodon.social/@ThinkTankNotOfficial)**
+
+## 🛠️ Architecture
+
+```
+┌─────────────┐
+│   Twitter   │
+│   Account   │
+└──────┬──────┘
+       │
+       ├─────────────────────────┐
+       │                         │
+   ┌───┴────────┐         ┌──────┴───────┐
+   │  RSSHub    │ ◄────── │  RSS Feed    │
+   └────┬───────┘         └──────────────┘
+        │
+        │ (HTTP Request)
+        │
+   ┌────┴──────────────────────┐
+   │   Docker Container        │
+   │  ┌──────────────────────┐ │
+   │  │   bot.py             │ │
+   │  │ (Monitoring + Posts) │ │
+   │  └──────────────────────┘ │
+   │  ┌──────────────────────┐ │
+   │  │   app.py             │ │
+   │  │ (Web UI + API)       │ │
+   │  └──────────────────────┘ │
+   └────┬──────────────────────┘
+        │
+        ├──────────────────┐
+        │                  │
+    ┌───┴────────┐    ┌────┴──────────┐
+    │  Mastodon  │    │  Web Browser  │
+    │  Instance  │    │  (localhost)  │
+    │            │    │  Port 5000    │
+    └────────────┘    └───────────────┘
 ```
 
-### Redémarrage
+## 📝 Fichiers principaux
 
-```bash
+- **bot.py** - Script de monitoring et publication
+- **app.py** - API Flask et interface web
+- **templates/index.html** - Interface web Material Design 3
+- **docker-compose.yml** - Configuration Docker
+- **Dockerfile** - Image Docker
+- **config.json** - Configuration persistante
+
+## ⚠️ Notes importantes
+
+- Le **token Mastodon** doit avoir la permission `write:statuses`
+- RSSHub doit être accessible (localement ou via réseau)
+- Les messages de démarrage s'auto-suppriment après le délai configuré
+- Le cache `posted_urls.json` évite les doublons
+- Les videos ont priorité sur les images
+- Les citations Twitter (rsshub-quote) sont automatiquement supprimées
+
+## 🐛 Troubleshooting
+
+### Le bot ne publie rien
+
+```
+# Vérifier les logs
+docker-compose logs -f
+
+# Vérifier la configuration
+docker exec rss-mastodon-bot cat config.json
+
+# Redémarrer
 docker-compose restart
 ```
 
----
+### Erreur de connexion Mastodon
 
-## 🔍 Logs et Debug
-
-Le bot affiche des logs détaillés :
-
-```
-[INIT] Bot started with RSSHub + Media extraction
-[OK] Startup message posted
-[INFO] Waiting 30s before delete...
-[OK] Startup message deleted! 💣
-[INIT] Cached: 5
-[INFO] Checking RSSHub...
-[DEBUG] Latest tweet: [Titre du tweet...]
-[INFO] Found 2 images in description
-[OK] Media uploaded: 115549257326252217
-[OK] Posted (ID: 115549257005214725): [Description...]
-[OK] Posted 1 new tweets
-```
-
-### Dépannage
-
-**Le bot ne démarre pas**
-```bash
-docker-compose build --no-cache
-docker-compose up -d
-docker-compose logs
-```
-
-**Les médias ne sont pas téléchargés**
-- Vérifiez que les URLs d'images répondent (200)
-- Vérifiez le token Mastodon
+- Vérifiez votre token
+- Vérifiez l'URL de l'instance
 - Vérifiez les permissions du token
 
-**Erreur 422 Mastodon**
-- Vérifiez que le format du statut est valide
-- Vérifiez que les IDs des médias sont corrects
-- Vérifiez la limite de caractères Mastodon
+### Erreur RSSHub
+
+- Vérifiez l'URL RSSHub
+- Vérifiez que RSSHub est accessible
+- Testez manuellement l'URL dans un navigateur
+
+## 📧 Support
+
+Pour toute question ou problème, ouvrez une [Issue GitHub](https://github.com/votre-username/rss-mastodon-bot/issues)
 
 ---
 
-## 🎨 Personnalisation
-
-### Modifier l'intervalle de vérification
-
-Dans `docker-compose.yml` :
-```yaml
-CHECK_INTERVAL: "300"  # 5 minutes
-```
-
-### Modifier le message d'auto-destruction
-
-Dans `bot.py`, ligne ~80 :
-```python
-startup_msg = f"""🤖 Ton message personnalisé ici
-..."""
-```
-
-### Modifier les sources Twitter
-
-Dans `docker-compose.yml` :
-```yaml
-RSSHUB_URL: "http://host.docker.internal:1200/twitter/user/<TWITTER_USERNAME>"
-```
-
----
-
-## 📂 Structure du projet
-
-```
-rss-mastodon-bot/
-├── Dockerfile
-├── docker-compose.yml
-├── bot.py
-├── posted_urls.json      # Cache (créé auto)
-└── README.md
-```
-
----
-
-## 🔄 Flux de fonctionnement
-
-```
-1. Démarrage
-   ├─ Poste message "Startup" + emoji
-   └─ Supprime le message après 30s
-
-2. Première exécution
-   ├─ Récupère le flux RSSHub
-   ├─ Extrait la dernière entrée
-   ├─ Upload les médias
-   └─ Poste sur Mastodon
-
-3. Boucle infinie (30 min d'intervalle)
-   ├─ Récupère le flux
-   ├─ Vérifie les nouveaux tweets
-   ├─ Pour chaque nouveau tweet :
-   │  ├─ Extrait images/vidéos
-   │  ├─ Upload sur Mastodon
-   │  └─ Poste le tweet
-   └─ Cache le tweet posté
-```
-
----
-
-## 🐛 Problèmes connus
-
-### Erreur "Connection refused"
-
-**Cause** : RSSHub local non accessible
-**Solution** : Utilisez `host.docker.internal` ou une URL publique
-
----
-
-## 📊 Performance
-
-- **Utilisation CPU** : Minimal (veille 30 min)
-- **Utilisation RAM** : ~50-100MB
-- **Bande passante** : ~1-5MB par tweet (avec médias)
-- **Temps de traitement** : 5-30s par tweet (dépend de la taille)
-
----
-
-## 📚 Ressources utiles
-
-- [RSSHub Documentation](https://docs.rsshub.app)
-- [Mastodon API Docs](https://docs.joinmastodon.org)
-- [Docker Compose Reference](https://docs.docker.com/compose/compose-file)
-- [feedparser Docs](https://pythonhosted.org/feedparser)
-
----
-
-**Fait avec ❤️**
-
+**Made with ❤️**

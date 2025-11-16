@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 RSSHub to Mastodon</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #fffbfe;
+            min-height: 100vh;
+            padding: 24px 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            margin-bottom: 32px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1d192b;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            color: #625b71;
+            font-weight: 500;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            padding: 24px;
+            box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.12), 0px 1px 2px rgba(0, 0, 0, 0.24);
+            transition: box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.15), 0px 2px 4px rgba(0, 0, 0, 0.30);
+        }
+        
+        .card h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1d192b;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .card h2::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(180deg, #6750a4 0%, #7c3aed 100%);
+            border-radius: 2px;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #49454e;
+            margin-bottom: 6px;
+        }
+        
+        .helper-text {
+            font-size: 12px;
+            color: #625b71;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #e7e0ec;
+            border-radius: 8px;
+            font-family: 'Roboto', sans-serif;
+            font-size: 14px;
+            color: #1d192b;
+            transition: all 0.2s ease;
+            background: #faf9fc;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            background: #fff;
+            border-color: #6750a4;
+            box-shadow: 0 0 0 4px rgba(103, 80, 164, 0.12);
+        }
+        
+        input::placeholder, textarea::placeholder {
+            color: #9d8da6;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .variables-hint {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        
+        .variable-chip {
+            background: #e8def8;
+            color: #6750a4;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #d0bfff;
+        }
+        
+        .variable-chip:hover {
+            background: #d0bfff;
+        }
+        
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        
+        @media (max-width: 600px) {
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'Roboto', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.38;
+            cursor: not-allowed;
+        }
+        
+        .btn-save {
+            background: linear-gradient(135deg, #6750a4 0%, #7c3aed 100%);
+            color: white;
+        }
+        
+        .btn-test {
+            background: #1d7f6e;
+            color: white;
+        }
+        
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .message.success {
+            background: #e6f4ea;
+            color: #0d652d;
+            border: 1px solid #81c995;
+        }
+        
+        .message.error {
+            background: #fce8e6;
+            color: #c5221f;
+            border: 1px solid #f1dce0;
+        }
+        
+        .info-box {
+            background: #e8def8;
+            border-left: 4px solid #6750a4;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            font-size: 13px;
+            color: #3e2c42;
+            line-height: 1.5;
+        }
+        
+        .info-box strong {
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🤖 RSSHub to Mastodon</h1>
+            <p>Configuration et gestion centralisée</p>
+        </div>
+        
+        <!-- Messages -->
+        <div id="message" class="message"></div>
+        
+        <!-- Info Box -->
+        <div class="info-box">
+            ℹ️ Modifiez les paramètres de votre bot et cliquez sur <strong>Sauvegarder</strong> pour appliquer les changements.
+        </div>
+        
+        <!-- Mastodon Configuration -->
+        <div class="card">
+            <h2>🎭 Mastodon</h2>
+            <div class="form-group">
+                <label for="mastodonUrl">URL de l'instance</label>
+                <input type="url" id="mastodonUrl" placeholder="https://mastodon.social">
+            </div>
+            <div class="form-group">
+                <label for="mastodonToken">Token API</label>
+                <input type="password" id="mastodonToken" placeholder="Votre token de sécurité">
+                <div class="helper-text">⚠️ Nécessaire pour poster sur Mastodon</div>
+            </div>
+        </div>
+        
+        <!-- RSSHub Configuration -->
+        <div class="card">
+            <h2>🔗 Source (RSSHub)</h2>
+            <div class="form-group">
+                <label for="rsshubUrl">URL du flux RSSHub</label>
+                <input type="url" id="rsshubUrl" placeholder="http://localhost:1200/twitter/user/...">
+            </div>
+            <div class="form-group">
+                <label for="twitterAccount">Compte Twitter</label>
+                <input type="text" id="twitterAccount" placeholder="L_ThinkTank">
+                <div class="helper-text">Le compte à surveiller</div>
+            </div>
+        </div>
+        
+        <!-- Startup Message Configuration -->
+        <div class="card">
+            <h2>💬 Message de démarrage</h2>
+            <div class="info-box">
+                ℹ️ Ce message teste votre token et s'auto-supprime après quelques secondes. Il inclut une vidéo.
+            </div>
+            <div class="form-group">
+                <label for="startupMessageTemplate">Template du message</label>
+                <textarea id="startupMessageTemplate" placeholder="🤖 Bot démarrage: {HEURE}&#10;📡 Surveillance: @{TWITTER_ACCOUNT}&#10;⏰ Auto-suppression dans {DELAY}s"></textarea>
+                <div class="helper-text">Variables disponibles:</div>
+                <div class="variables-hint">
+                    <span class="variable-chip" onclick="insertVariable(event, '{HEURE}')">HEURE</span>
+                    <span class="variable-chip" onclick="insertVariable(event, '{DATE}')">DATE</span>
+                    <span class="variable-chip" onclick="insertVariable(event, '{TWITTER_ACCOUNT}')">TWITTER_ACCOUNT</span>
+                    <span class="variable-chip" onclick="insertVariable(event, '{DELAY}')">DELAY</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="autoDeleteDelay">Délai avant suppression (secondes)</label>
+                <input type="number" id="autoDeleteDelay" min="5" value="30">
+            </div>
+            <div class="form-group">
+                <label for="autoDestructVideo">URL vidéo d'auto-destruction</label>
+                <input type="url" id="autoDestructVideo" placeholder="https://media.giphy.com/...">
+            </div>
+        </div>
+        
+        <!-- RSS Posts Configuration -->
+        <div class="card">
+            <h2>📰 Posts du flux RSS</h2>
+            <div class="info-box">
+                ℹ️ Ces paramètres s'appliquent à chaque post publié depuis le flux RSS.
+            </div>
+            <div class="form-group">
+                <label for="checkInterval">Intervalle de vérification (secondes)</label>
+                <input type="number" id="checkInterval" min="60" value="1800">
+                <div class="helper-text">Fréquence de vérification du flux RSS</div>
+            </div>
+            <div class="form-group">
+                <label for="maxCharPerPost">Caractères maximum par post</label>
+                <input type="number" id="maxCharPerPost" min="100" value="490">
+                <div class="helper-text">Les posts plus longs seront découpés en threads</div>
+            </div>
+            <div class="form-group">
+                <label for="continuationMessage">Message de continuation</label>
+                <textarea id="continuationMessage" placeholder="[La suite dans les commentaires 👇]"></textarea>
+                <div class="helper-text">Message affiché lors d'une continuation de post en thread</div>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="card">
+            <h2>🚀 Actions</h2>
+            <div class="button-group">
+                <button class="btn-save" onclick="saveConfig()">💾 Sauvegarder</button>
+                <button class="btn-test" onclick="testPost()">🧪 Test Post</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        window.addEventListener('load', () => {
+            loadConfig();
+        });
+        
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                const config = await response.json();
+                
+                document.getElementById('mastodonUrl').value = config.MASTODON_URL;
+                document.getElementById('mastodonToken').value = config.MASTODON_TOKEN;
+                document.getElementById('rsshubUrl').value = config.RSSHUB_URL;
+                document.getElementById('twitterAccount').value = config.TWITTER_ACCOUNT;
+                document.getElementById('checkInterval').value = config.CHECK_INTERVAL;
+                document.getElementById('autoDeleteDelay').value = config.AUTO_DELETE_DELAY;
+                document.getElementById('maxCharPerPost').value = config.MAX_CHAR_PER_POST;
+                document.getElementById('autoDestructVideo').value = config.AUTODESTRUCT_VIDEO_URL;
+                document.getElementById('startupMessageTemplate').value = config.STARTUP_MESSAGE_TEMPLATE || "🤖 Bot démarrage: {HEURE}\n📡 Surveillance: @{TWITTER_ACCOUNT}\n⏰ Auto-suppression dans {DELAY}s";
+                document.getElementById('continuationMessage').value = config.CONTINUATION_MESSAGE || "[La suite dans les commentaires 👇]";
+            } catch (error) {
+                showMessage('Erreur lors du chargement', 'error');
+            }
+        }
+        
+        async function saveConfig() {
+            const config = {
+                MASTODON_URL: document.getElementById('mastodonUrl').value,
+                MASTODON_TOKEN: document.getElementById('mastodonToken').value,
+                RSSHUB_URL: document.getElementById('rsshubUrl').value,
+                TWITTER_ACCOUNT: document.getElementById('twitterAccount').value,
+                CHECK_INTERVAL: document.getElementById('checkInterval').value,
+                AUTO_DELETE_DELAY: document.getElementById('autoDeleteDelay').value,
+                MAX_CHAR_PER_POST: document.getElementById('maxCharPerPost').value,
+                AUTODESTRUCT_VIDEO_URL: document.getElementById('autoDestructVideo').value,
+                STARTUP_MESSAGE_TEMPLATE: document.getElementById('startupMessageTemplate').value,
+                CONTINUATION_MESSAGE: document.getElementById('continuationMessage').value
+            };
+            
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(config)
+                });
+                
+                if (response.ok) {
+                    showMessage('✅ Configuration sauvegardée avec succès !', 'success');
+                } else {
+                    showMessage('❌ Erreur lors de la sauvegarde', 'error');
+                }
+            } catch (error) {
+                showMessage('❌ Erreur: ' + error.message, 'error');
+            }
+        }
+        
+        async function testPost() {
+            if (confirm('Envoyer le dernier tweet du flux RSS à Mastodon ?')) {
+                const btn = event.target;
+                btn.disabled = true;
+                btn.textContent = '⏳ Test en cours...';
+                
+                try {
+                    const response = await fetch('/api/test', {method: 'POST'});
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        showMessage(`✅ ${data.message}`, 'success');
+                    } else {
+                        showMessage(`❌ ${data.message}`, 'error');
+                    }
+                } catch (error) {
+                    showMessage(`❌ Erreur: ${error.message}`, 'error');
+                }
+                
+                btn.disabled = false;
+                btn.textContent = '🧪 Test Post';
+            }
+        }
+        
+        function insertVariable(event, variable) {
+            const textarea = document.getElementById('startupMessageTemplate');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            
+            textarea.value = text.substring(0, start) + variable + text.substring(end);
+            textarea.selectionStart = textarea.selectionEnd = start + variable.length;
+            textarea.focus();
+        }
+        
+        function showMessage(text, type) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = 'message ' + type;
+            setTimeout(() => msg.className = 'message', 5000);
+        }
+    </script>
+</body>
+</html>

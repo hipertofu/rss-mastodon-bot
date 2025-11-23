@@ -1,10 +1,17 @@
 # 🤖 RSSHub to Mastodon Bot
 
-Un bot automatisé qui surveille un flux RSS (alimenté par RSSHub) d'un compte X et republique automatiquement les posts sur Mastodon avec support des vidéos et images, découpée en threads intelligents.
+Bot automatisé multi-profils pour diffuser des flux RSS Twitter/X vers Mastodon avec gestion complète via interface web avec support des vidéos et images, découpée en threads intelligents.
+
+![Version](https://img.shields.io/badge/version-2.0.0-blue)
+![Python](https://img.shields.io/badge/python-3.11-green)
+![Docker](https://img.shields.io/badge/docker-ready-brightgreen)
 
 ## 🎯 Fonctionnalités
 
+✅ **Multi-profils** - Gérez plusieurs bots simultanément (chacun avec son compte Mastodon)  
 ✅ **Surveillance RSS automatique** - Vérifie régulièrement le flux RSS via RSSHub  
+✅ **Multi-sources RSS** - Surveillez plusieurs comptes Twitter/X par profil  
+✅ **Anti-doublon intelligent** - Si une source détecte un nouveau post, les autres sont ignorées  
 ✅ **Publication Mastodon** - Publie les posts automatiquement sur votre instance Mastodon   
 ✅ **Suppression des citations** - Ignore les tweets cités
 ✅ **Threads intelligents** - Découpe automatiquement les longs posts en threads  
@@ -13,6 +20,7 @@ Un bot automatisé qui surveille un flux RSS (alimenté par RSSHub) d'un compte 
 ✅ **Variables personnalisables** - Personnalisez les messages de démarrage et de continuation  
 ✅ **Cache intelligent** - Évite de republier les mêmes posts  
 ✅ **Gestion des erreurs robuste** - Logs détaillés et gestion des rate limits  
+✅ **Persistance des données** - Volumes Docker pour ne jamais perdre vos configurations  
 
 ## 📋 Prérequis
 
@@ -26,27 +34,19 @@ Un bot automatisé qui surveille un flux RSS (alimenté par RSSHub) d'un compte 
 ### 1. Cloner le repository
 
 ```
-git clone <votre-url-repo>
+git clone [<votre-url-repo>](https://github.com/hipertofu/rss-mastodon-bot)
 cd rss-mastodon-bot
 ```
 
 ### 2. Créer les fichiers de configuration
 
 ```
-# Créer le Dockerfile
-cat > Dockerfile << 'EOF'
-FROM python:3.11-slim
-WORKDIR /app
 
-RUN pip install feedparser requests Flask
+# Créer les dossiers de données
 
-COPY bot.py app.py requirements.txt ./
-COPY templates/ ./templates/
-
-EXPOSE 5000
-
-CMD sh -c "python -u bot.py & python -u app.py"
-EOF
+mkdir -p data/cache
+chmod 777 data
+chmod 777 data/cache
 
 # Créer requirements.txt
 cat > requirements.txt << 'EOF'
